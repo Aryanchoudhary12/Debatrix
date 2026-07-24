@@ -1,65 +1,148 @@
+"use client";
+import Button from "./components/ui/button";
+import { Highlighter } from "./components/ui/text-highlight";
 import Image from "next/image";
-
+import underline from "@/public/underline.png";
+import { useRouter } from "next/navigation";
+import { BentoGrid, BentoGridItem } from "./components/blocks/bento-grid";
+import { TbSwords } from "react-icons/tb";
+import { BiSolidMessageSquareDetail } from "react-icons/bi";
+import ai from "@/public/ai.jpg";
+import roast from "@/public/roast.jpg";
+import versus from "@/public/versus.jpg";
+import { BsFire } from "react-icons/bs";
+import { FaTrophy } from "react-icons/fa";
+import { Globe } from "./components/blocks/globe";
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+  const router = useRouter();
+  const features = [
+    {
+      title: "Live 1v1 debates",
+      description:
+        "Get matched with a real opponent and argue your case in real time. No scripts, no do-overs.",
+      icon: (
+        <TbSwords className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
+      ),
+      header: (
         <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+          src={versus}
+          alt="AI judging a debate"
+          className="rounded-lg object-cover w-full h-40"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      ),
+      className: "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+    },
+    {
+      title: "AI-judged, every round",
+      description:
+        "Debatrix scores logic, evidence, and persuasion as the debate happens — then delivers a verdict.",
+      icon: (
+        <BiSolidMessageSquareDetail className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
+      ),
+      header: (
+        <Image
+          src={ai}
+          alt="AI judging a debate"
+          className="rounded-lg object-cover w-full h-40"
+        />
+      ),
+      className: "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+    },
+    {
+      title: "Ranked ELO ladder",
+      description:
+        "Win, gain ELO. Lose, learn exactly where your argument broke down. Climb like it's ranked play.",
+      icon: (
+        <FaTrophy className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
+      ),
+      className: "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      header: (
+        <div className="relative w-full h-40 rounded-lg overflow-hidden">
+          <Globe className="-top-10" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+      ),
+    },
+    {
+      title: "Solo roast mode",
+      description:
+        "Not ready to go live? Submit an argument on its own and get roasted, scored, and sharpened first.",
+      icon: (
+        <BsFire className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
+      ),
+      className: "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      header: (
+        <Image
+          src={roast}
+          alt="AI roasting a debate"
+          className="rounded-lg object-cover w-full h-40"
+        />
+      ),
+    },
+  ];
+  return (
+    <main className="relative min-h-screen flex flex-col items-center justify-center p-6 pt-40 w-full">
+      <div className="flex flex-col gap-6 max-w-3xl  justify-center items-center text-center">
+        <h1 className="text-5xl font-semibold font-montserrat text-accent">
+          Prove You've Got The Sharper Argument On{" "}
+          <span className="text-[#1575dc] relative">
+            Debate{" "}
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src={underline}
+              alt="Underline"
+              className="absolute -bottom-1 left-8 w-36 object-contain"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </span>
+        </h1>
+        <span className="text-sm text-secondary font-poppins font-medium text-center max-w-xl mt-4">
+          Get matched with{" "}
+          <Highlighter action="highlight" color="#1591DC">
+            real opponent
+          </Highlighter>{" "}
+          . Debatrix's AI judges every exchange and crowns a winner. No more{" "}
+          <Highlighter action="underline" color="#1591DC">
+            I would've destroyed them
+          </Highlighter>{" "}
+          after the fact.
+        </span>
+        <div className="flex gap-5 justify-center mt-4">
+          <Button
+            variant="secondary"
+            className="rounded-lg "
+            onClick={() => router.push("/discover")}
           >
-            Documentation
-          </a>
+            Join a Debate
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-lg"
+            onClick={() => router.push("/roast")}
+          >
+            Get Roasted
+          </Button>
         </div>
-      </main>
-    </div>
+      </div>
+      <div className="flex flex-col items-center justify-center mt-12 gap-4">
+        <h2 className="relative text-2xl font-extrabold font-montserrat text-accent">
+          Our Features
+          <Image
+            src={underline}
+            alt="Underline"
+            className="absolute -bottom-2.5 left-2 w-48 object-contain"
+          />
+        </h2>
+        <BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem] mt-10">
+          {features.map((item, i) => (
+            <BentoGridItem
+              key={i}
+              title={item.title}
+              description={item.description}
+              header={item.header}
+              className={item.className}
+              icon={item.icon}
+            />
+          ))}
+        </BentoGrid>
+      </div>
+    </main>
   );
 }

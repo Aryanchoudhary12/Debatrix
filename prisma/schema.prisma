@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String          @id @default(cuid())
+  name                 String?
+  email                String          @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  accounts             Account[]
+  sessions             Session[]
+  Authenticator        Authenticator[]
+  Listener             Listener?
+  debatesAsCurrentUser Debate[]        @relation("CurrentUser")
+  debatesAsOpponent    Debate[]        @relation("Opponent")
+  roasts               Roast[]
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+model Listener {
+  id            String   @id @default(cuid())
+  tagline       String?
+  likes         Int      @default(0)
+  interests     String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listenerStats Stats?
+
+  @@index([likes])
+}
+
+model Stats {
+  id                String   @id @default(cuid())
+  elo               Int      @default(1000)
+  logicScore        Int      @default(0)
+  overallScore      Int      @default(0)
+  persuasionScore   Int      @default(0)
+  factCheckAccuracy Int      @default(0)
+  aiFeedbackSummary String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  listenerId        String   @unique
+  listener          Listener @relation(fields: [listenerId], references: [id], onDelete: Cascade)
+
+  @@index([elo])
+  @@index([overallScore])
+}
+
+model Debate {
+  id             String       @id @default(cuid())
+  title          String
+  voteCountUser1 Int          @default(0)
+  voteCountUser2 Int          @default(0)
+  spectators     Int          @default(0)
+  status         DebateStatus @default(Waiting)
+  CurrentUserId  String?
+  OpponentId     String?
+  CurrentUser    User?        @relation("CurrentUser", fields: [CurrentUserId], references: [id], onDelete: Cascade)
+  Opponent       User?        @relation("Opponent", fields: [OpponentId], references: [id], onDelete: Cascade)
+  turns          DebateTurn[]
+  startedAt      DateTime?
+  turnStartedAt  DateTime?
+  activeUserId   String?
+  createdAt      DateTime     @default(now())
+}
+
+enum DebateStatus {
+  Waiting
+  Live
+  Completed
+  Cancelled
+}
+
+model DebateTurn {
+  id        String   @id @default(cuid())
+  debateId  String
+  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  speakerId String
+  content   String
+  turnIndex Int
+  createdAt DateTime @default(now())
+
+  @@index([debateId])
+}
+
+model Roast {
+  id        String    @id @default(cuid())
+  title     String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Message {
+  id         String        @id @default(cuid())
+  roastId    String
+  roast      Roast         @relation(fields: [roastId], references: [id])
+  content    String
+  roastLevel Int?
+  logicCheck String?
+  burnScore  Int?
+  sender     MessageSender
+  prompt     String?
+  createdAt  DateTime      @default(now())
+
+  @@index([roastId])
+}
+
+enum MessageSender {
+  AI
+  User
+}

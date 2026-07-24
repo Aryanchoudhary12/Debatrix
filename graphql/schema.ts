@@ -1,0 +1,10 @@
+import { listenerTypeDefs } from "./typeDefs/profile.typedefs";
+import { listenerResolvers } from "./resolvers/profile.resolver";
+import { debateTypeDefs } from "./typeDefs/debate.typedefs";
+import { debateResolvers } from "./resolvers/debate.resolver";
+import { debateTurnResolvers } from "./resolvers/debateTurn.resolver";
+import { debateTurnTypeDefs } from "./typeDefs/debateTurn.typeDefs";
+import {roastTypeDefs} from "./typeDefs/roast.typedefs";
+import { roastResolvers } from "./resolvers/roast.resolver";
+export const typeDefs = [listenerTypeDefs, debateTypeDefs, debateTurnTypeDefs, roastTypeDefs];
+export const resolvers = [listenerResolvers, debateResolvers, debateTurnResolvers, roastResolvers];
