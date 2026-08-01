@@ -30,7 +30,8 @@ export default function Home() {
           className="rounded-lg object-cover w-full h-40"
         />
       ),
-      className: "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      className:
+        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
     },
     {
       title: "AI-judged, every round",
@@ -46,7 +47,8 @@ export default function Home() {
           className="rounded-lg object-cover w-full h-40"
         />
       ),
-      className: "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      className:
+        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
     },
     {
       title: "Ranked ELO ladder",
@@ -55,7 +57,8 @@ export default function Home() {
       icon: (
         <FaTrophy className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
       ),
-      className: "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      className:
+        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
       header: (
         <div className="relative w-full h-40 rounded-lg overflow-hidden">
           <Globe className="-top-10" />
@@ -69,7 +72,8 @@ export default function Home() {
       icon: (
         <BsFire className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
       ),
-      className: "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+      className:
+        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
       header: (
         <Image
           src={roast}
@@ -84,12 +88,12 @@ export default function Home() {
       <div className="flex flex-col gap-6 max-w-3xl  justify-center items-center text-center">
         <h1 className="text-5xl font-semibold font-montserrat text-accent">
           Prove You've Got The Sharper Argument On{" "}
-          <span className="text-[#1575dc] relative">
-            Debate{" "}
+          <span className="text-[#1575dc] relative font-fascinate-inline">
+            Debatrix{" "}
             <Image
               src={underline}
               alt="Underline"
-              className="absolute -bottom-1 left-8 w-36 object-contain"
+              className="absolute -bottom-1 left-8 w-48 object-contain"
             />
           </span>
         </h1>
@@ -98,11 +102,8 @@ export default function Home() {
           <Highlighter action="highlight" color="#1591DC">
             real opponent
           </Highlighter>{" "}
-          . Debatrix's AI judges every exchange and crowns a winner. No more{" "}
-          <Highlighter action="underline" color="#1591DC">
-            I would've destroyed them
-          </Highlighter>{" "}
-          after the fact.
+          . Debatrix's AI judges every exchange and crowns a winner. No more I
+          would've destroyed them after the fact.
         </span>
         <div className="flex gap-5 justify-center mt-4">
           <Button
@@ -127,10 +128,13 @@ export default function Home() {
           <Image
             src={underline}
             alt="Underline"
-            className="absolute -bottom-2.5 left-2 w-48 object-contain"
+            className="absolute -bottom-1.5 left-8 w-28 object-contain"
           />
         </h2>
-        <BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem] mt-10">
+        <p className="text-secondary text-sm font-medium font-poppins text-center max-w-md">
+          Discover the features that make Debatrix the ultimate platform for intellectual combat.
+        </p>
+        <BentoGrid className="max-w-4xl mx-auto md:auto-rows-80 mt-10">
           {features.map((item, i) => (
             <BentoGridItem
               key={i}

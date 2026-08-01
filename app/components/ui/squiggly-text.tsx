@@ -5,7 +5,7 @@ import { motion, useTime, useTransform } from "motion/react";
 import { cn } from "@/app/lib/utils";
 
 export interface SquigglyTextProps {
- 
+  as?: "span" | "div";
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;

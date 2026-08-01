@@ -2,7 +2,7 @@ import Groq from "groq-sdk";
 
 const globalForGroq = global as unknown as { groq?: Groq };
 
-function createGroqClient() {
+function createGroqClient(): Groq {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error("GROQ_API_KEY is not set");
@@ -10,8 +10,12 @@ function createGroqClient() {
   return new Groq({ apiKey });
 }
 
-export const groq = globalForGroq.groq ?? createGroqClient();
-globalForGroq.groq = groq;
+export function getGroq(): Groq {
+  if (!globalForGroq.groq) {
+    globalForGroq.groq = createGroqClient();
+  }
+  return globalForGroq.groq;
+}
 
 export interface DebaterScore {
   overallScore: number;
@@ -59,7 +63,7 @@ Respond with ONLY valid JSON, no markdown formatting, no code fences, no preambl
 
   const userPrompt = `Debate topic: "${topic}"\n\nTranscript:\n${transcript}`;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await getGroq().chat.completions.create({
     model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: systemPrompt },

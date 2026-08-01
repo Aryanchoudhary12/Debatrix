@@ -1,4 +1,4 @@
-import { groq } from "./groq";
+import { getGroq } from "./groq";
 
 export interface RoastFeedback {
   roastText: string;
@@ -41,7 +41,7 @@ Respond with ONLY valid JSON, no markdown, no code fences. Exact shape:
     ? `Prior conversation:\n${conversationContext}\n\nLatest argument to roast:\n${userMessage}`
     : `Argument to roast:\n${userMessage}`;
 
-  const completion = await groq.chat.completions.create({
+  const completion = await getGroq().chat.completions.create({
     model: "llama-3.3-70b-versatile",
     messages: [
       { role: "system", content: systemPrompt },

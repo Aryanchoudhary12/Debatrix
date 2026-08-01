@@ -1,8 +1,7 @@
 import Redis from "ioredis";
-
 const globalForRedis = global as unknown as { redis?: Redis };
 
-function createRedisClient() {
+function createRedisClient(): Redis {
   const url = process.env.REDIS_URL;
   if (!url) {
     throw new Error("REDIS_URL is not set");
@@ -10,7 +9,6 @@ function createRedisClient() {
 
   const client = new Redis(url, {
     tls: url.startsWith("rediss://") ? {} : undefined,
-
     maxRetriesPerRequest: null,
     retryStrategy(times) {
       return Math.min(times * 200, 5000);
@@ -32,8 +30,9 @@ function createRedisClient() {
   return client;
 }
 
-export const redis = globalForRedis.redis ?? createRedisClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForRedis.redis = redis;
+export function getRedis(): Redis {
+  if (!globalForRedis.redis) {
+    globalForRedis.redis = createRedisClient();
+  }
+  return globalForRedis.redis;
 }

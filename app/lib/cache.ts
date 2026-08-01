@@ -1,4 +1,4 @@
-import { redis } from "./redis";
+import { getRedis  } from "./redis";
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -21,7 +21,7 @@ export async function getOrSetCache<T>(
   fetcher: () => Promise<T>,
 ): Promise<T> {
   try {
-    const cached = await withTimeout(redis.get(key), 1000, `get "${key}"`);
+    const cached = await withTimeout(getRedis().get(key), 1000, `get "${key}"`);
     if (cached) return JSON.parse(cached) as T;
   } catch (err) {
     console.error(`[cache] read failed for key "${key}":`, err);
@@ -31,7 +31,7 @@ export async function getOrSetCache<T>(
 
   try {
     await withTimeout(
-      redis.set(key, JSON.stringify(fresh), "EX", ttlSeconds),
+      getRedis().set(key, JSON.stringify(fresh), "EX", ttlSeconds),
       1000,
       `set "${key}"`,
     );
@@ -44,7 +44,7 @@ export async function getOrSetCache<T>(
 
 export async function invalidateCache(key: string) {
   try {
-    await withTimeout(redis.del(key), 1000, `del "${key}"`);
+    await withTimeout(getRedis().del(key), 1000, `del "${key}"`);
   } catch (err) {
     console.error(`[cache] invalidate failed for key "${key}":`, err);
   }

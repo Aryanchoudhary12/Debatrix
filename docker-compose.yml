@@ -15,6 +15,8 @@ services:
       network: host
       context: ./
       dockerfile: DockerFile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
