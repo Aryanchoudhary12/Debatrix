@@ -1,3 +1,6 @@
+import { setDefaultAutoSelectFamily } from "net";
+setDefaultAutoSelectFamily(false);
+
 import "dotenv/config";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
