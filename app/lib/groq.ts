@@ -36,6 +36,21 @@ interface TranscriptTurn {
   turnIndex: number;
 }
 
+const FALLBACK_SCORE: DebaterScore = {
+  overallScore: 0,
+  logicScore: 0,
+  persuasionScore: 0,
+  factCheckAccuracy: 0,
+  feedbackSummary:
+    "Scoring is temporarily unavailable. This debate will need to be re-scored.",
+};
+
+function stripCodeFences(raw: string): string {
+  const trimmed = raw.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenced ? fenced[1] : trimmed;
+}
+
 export async function scoreDebateWithGroq(
   topic: string,
   turns: TranscriptTurn[],
@@ -51,9 +66,9 @@ Score each debater on these 4 metrics, each from 0-100:
 - overallScore: overall debate performance
 - logicScore: strength and coherence of logical reasoning
 - persuasionScore: rhetorical skill and persuasiveness
-- factCheckAccuracy: factual accuracy of claims made (penalize unsupported or false claims)
+- factCheckAccuracy: factual accuracy of claims made (penalize unsupported or false claims) for the provided topic
 
-Also write a short (2-3 sentence) feedbackSummary for each debater — specific, constructive, mentioning at least one concrete moment from the transcript.
+Also write a short (4-5 sentence) feedbackSummary for each debater — specific, constructive, mentioning at least one concrete moment from the transcript and provide actionable suggestions for improvement.
 
 Respond with ONLY valid JSON, no markdown formatting, no code fences, no preamble. Exact shape:
 {
@@ -61,33 +76,45 @@ Respond with ONLY valid JSON, no markdown formatting, no code fences, no preambl
   "user2": { "overallScore": number, "logicScore": number, "persuasionScore": number, "factCheckAccuracy": number, "feedbackSummary": string }
 }`;
 
-  const userPrompt = `Debate topic: "${topic}"\n\nTranscript:\n${transcript}`;
+  const userPrompt = `Debate topic: "${topic}"\n\nTranscript:\n${transcript} and all arguments must remain relevant to the topic.`;
 
-  const completion = await getGroq().chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    temperature: 0.3,
-    response_format: { type: "json_object" },
-  });
-
-  const raw = completion.choices[0]?.message?.content;
-  if (!raw) {
-    throw new Error("Groq returned no content");
+  let raw: string | undefined;
+  try {
+    const completion = await getGroq().chat.completions.create({
+      model: "openai/gpt-oss-120b",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+    raw = completion.choices[0]?.message?.content ?? undefined;
+  } catch (err) {
+    console.error("[groq] scoring request failed:", err);
+    return { user1: FALLBACK_SCORE, user2: FALLBACK_SCORE };
   }
 
-  let parsed: DebateScoreResult;
+  if (!raw) {
+    console.error("[groq] scoring returned no content");
+    return { user1: FALLBACK_SCORE, user2: FALLBACK_SCORE };
+  }
+
+  let parsed: Partial<DebateScoreResult>;
   try {
-    parsed = JSON.parse(raw);
+    parsed = JSON.parse(stripCodeFences(raw));
   } catch (err) {
-    throw new Error(`Groq response was not valid JSON: ${raw.slice(0, 200)}`);
+    console.error(
+      `[groq] scoring response was not valid JSON: ${raw.slice(0, 200)}`,
+    );
+    return { user1: FALLBACK_SCORE, user2: FALLBACK_SCORE };
   }
 
   const clamp = (n: unknown): number => {
-    const num = typeof n === "number" ? n : 0;
-    return Math.max(0, Math.min(100, Math.round(num)));
+    const num = typeof n === "number" ? n : Number(n);
+    return Number.isFinite(num)
+      ? Math.max(0, Math.min(100, Math.round(num)))
+      : 0;
   };
 
   const normalize = (s: Partial<DebaterScore> | undefined): DebaterScore => ({

@@ -11,6 +11,7 @@ import Button from "@/app/components/ui/button";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 const GET_LISTENER_BY_USER_ID = gql`
   query listenerByUser($userId: ID!) {
     listenerByUser(userId: $userId) {
@@ -18,6 +19,7 @@ const GET_LISTENER_BY_USER_ID = gql`
       userId
       tagline
       interests
+      likes
       listenerStats {
         elo
         logicScore
@@ -29,48 +31,41 @@ const GET_LISTENER_BY_USER_ID = gql`
       user {
         name
         image
-        debatesAsCurrentUser {
-          id
-          title
-          status
-          voteCountUser1
-          voteCountUser2
-          CurrentUser {
-            name
+        createdAt
+        debateEntries {
+          role
+          debate {
+            id
+            title
+            status
+            spectators
+            createdAt
+            participants {
+              id
+              role
+              user {
+                name
+              }
+              votesReceived {
+                id
+              }
+            }
           }
-          Opponent {
-            name
-          }
-          spectators
-          createdAt
-        }
-        debatesAsOpponent {
-          id
-          title
-          status
-          voteCountUser1
-          voteCountUser2
-          CurrentUser {
-            name
-          }
-          Opponent {
-            name
-          }
-          spectators
-          createdAt
         }
       }
       createdAt
     }
   }
 `;
+
 const JOIN_DEBATE = gql`
-  mutation JoinDebate($debateId: ID!, $userId: String!) {
+  mutation JoinDebate($debateId: ID!, $userId: ID!) {
     joinDebate(debateId: $debateId, userId: $userId) {
       id
     }
   }
 `;
+
 interface DebateRoom {
   id: string;
   topic: string;
@@ -95,43 +90,34 @@ function normalizeStatus(status: string): DebateRoom["status"] {
     : "Waiting";
 }
 
-function mapDebate(raw: any, viewerIsCurrentUser: boolean): DebateRoom {
-  const opponentName = viewerIsCurrentUser
-    ? raw.Opponent?.name
-    : raw.CurrentUser?.name;
+function mapDebate(entry: { role: string; debate: any }): DebateRoom {
+  const debate = entry.debate;
+  const participants: any[] = debate.participants ?? [];
+  const me = participants.find((p) => p.role === entry.role);
+  const other = participants.find((p) => p.role !== entry.role);
 
   return {
-    id: raw.id,
-    topic: raw.title,
+    id: debate.id,
+    topic: debate.title,
     category: "General",
-    opponent: opponentName ?? "Waiting for opponent",
-    status: normalizeStatus(raw.status),
-    spectators: raw.spectators ?? 0,
-    userVotes: viewerIsCurrentUser ? raw.voteCountUser1 : raw.voteCountUser2,
-    opponentVotes: viewerIsCurrentUser
-      ? raw.voteCountUser2
-      : raw.voteCountUser1,
+    opponent: other?.user?.name ?? "Waiting for opponent",
+    status: normalizeStatus(debate.status),
+    spectators: debate.spectators ?? 0,
+    userVotes: me?.votesReceived?.length ?? 0,
+    opponentVotes: other?.votesReceived?.length ?? 0,
   };
 }
 
-function buildActiveRooms(user: {
-  debatesAsCurrentUser: any[];
-  debatesAsOpponent: any[];
-}): DebateRoom[] {
-  const asCurrentUser = (user.debatesAsCurrentUser ?? []).map((d) =>
-    mapDebate(d, true),
-  );
-  const asOpponent = (user.debatesAsOpponent ?? []).map((d) =>
-    mapDebate(d, false),
-  );
-  return [...asCurrentUser, ...asOpponent];
+function buildActiveRooms(debateEntries: { role: string; debate: any }[]): DebateRoom[] {
+  return (debateEntries ?? []).map(mapDebate);
 }
 
 export default function ProfilePage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  console.log("User ID:", userId);
   const router = useRouter();
-  const { data, loading } = useQuery<{
+  const { data,error, loading } = useQuery<{
     listenerByUser: any;
   }>(GET_LISTENER_BY_USER_ID, {
     variables: { userId },
@@ -139,9 +125,9 @@ export default function ProfilePage() {
     pollInterval: 30000,
   });
   const listenerData = data?.listenerByUser;
-  const activeRooms = data?.listenerByUser?.user
-    ? buildActiveRooms(data.listenerByUser.user)
-    : [];
+  console.log("Listener query state:", { loading, error, data });
+  console.log("Listener data:", listenerData);
+  const activeRooms = buildActiveRooms(listenerData?.user?.debateEntries ?? []);
 
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [joinDebate] = useMutation(JOIN_DEBATE, {
@@ -154,21 +140,22 @@ export default function ProfilePage() {
       toast.error(err.message || "Couldn't join this debate");
     },
   });
+
   const handleJoin = async (debateId: string) => {
+    if (!session?.user?.id) {
+      toast.error("Sign in to join a debate");
+      return;
+    }
     setJoiningId(debateId);
     try {
-      if (!session?.user?.id) {
-        toast.error("Sign in to join a debate");
-        return;
-      }
       joinDebate({ variables: { debateId, userId: session.user.id } });
     } catch (error) {
       console.error("Error joining debate:", error);
       toast.error("An error occurred while trying to join the debate.");
-    } finally {
       setJoiningId(null);
     }
   };
+
   function computeDebateStats(rooms: DebateRoom[]) {
     const completed = rooms.filter((r) => r.status === "Completed");
 
@@ -191,18 +178,20 @@ export default function ProfilePage() {
       winRate,
     };
   }
+
   const { totalDebates, wins, losses, winRate } =
     computeDebateStats(activeRooms);
+
   const profileData = {
     listenerId: listenerData?.id,
-    username: listenerData?.user.name || session?.user?.name || "Unknown User",
-    imageUrl: listenerData?.user.image || undefined,
+    username: listenerData?.user?.name || session?.user?.name || "Unknown User",
+    imageUrl: listenerData?.user?.image || undefined,
     tagline:
       listenerData?.tagline ||
       "Tagline not set yet - update your profile to set it.",
     elo: listenerData?.listenerStats?.elo || 0,
-    likes: listenerData?.listenerStats?.likes || 0,
-    joinedDate: listenerData?.user.createdAt || "N/A",
+    likes: listenerData?.likes || 0,
+    joinedDate: listenerData?.user?.createdAt || null,
     interests: listenerData?.interests || [],
     stats: [
       { label: "Total Debates", value: totalDebates },
@@ -238,9 +227,11 @@ export default function ProfilePage() {
         "No AI feedback available yet. Engage in debates to receive insights.",
     },
   };
+
   if (loading) {
     return <Loading />;
   }
+
   return (
     <main className="min-h-screen  p-4 sm:px-6 lg:px-8 font-sans w-full pt-20">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
@@ -252,7 +243,11 @@ export default function ProfilePage() {
           elo={profileData.elo}
           likes={profileData.likes}
           interests={profileData.interests}
-          joinedDate={new Date(profileData.joinedDate).toDateString()}
+          joinedDate={
+            profileData.joinedDate
+              ? new Date(profileData.joinedDate).toDateString()
+              : "N/A"
+          }
         />
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
           <StatsGrid stats={profileData.stats} />

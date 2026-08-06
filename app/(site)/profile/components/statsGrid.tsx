@@ -27,7 +27,9 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
           </span>
           <div className="mt-2">
             <span className="text-2xl font-extrabold text-secondary tracking-tight font-inter">
-              {stat.value}
+              {typeof stat.value === "number"
+                ? stat.value.toFixed(2)
+                : stat.value}
             </span>
           </div>
         </div>

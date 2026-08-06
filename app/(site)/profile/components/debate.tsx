@@ -1,6 +1,7 @@
 import Button from "@/app/components/ui/button";
 import React from "react";
 import { LiveSpectatorCount } from "../../debate/components/liveSpectatorCount";
+import { TbDeviceTvOldFilled } from "react-icons/tb";
 
 interface DebateRoom {
   id: string;
@@ -97,8 +98,8 @@ export const ActiveDebates: React.FC<ActiveDebatesProps> = ({
                     variant="outline"
                   >
                     {room.status === "Waiting" || room.status === "Live" ? (
-                      <span>
-                        👥{" "}
+                      <span className="flex items-center gap-1">
+                        <TbDeviceTvOldFilled />{" "}
                         <LiveSpectatorCount
                           debateId={room.id}
                           status={room.status}
@@ -107,7 +108,9 @@ export const ActiveDebates: React.FC<ActiveDebatesProps> = ({
                         watching
                       </span>
                     ) : (
-                      `👥 ${room.spectators} max views`
+                      <span className="flex items-center gap-1">
+                        <TbDeviceTvOldFilled /> {room.spectators} max views
+                      </span>
                     )}
                   </Button>
                 </div>

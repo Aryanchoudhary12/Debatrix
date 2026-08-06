@@ -1,5 +1,4 @@
 "use client";
-import React from "react";
 import Button from "@/app/components/ui/button";
 import InputField from "@/app/components/ui/inputField";
 import { useForm } from "react-hook-form";
@@ -9,13 +8,12 @@ import {
   DebateSchemaType,
 } from "@/app/schema/debateSchema/debateSchema";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
 import toast from "react-hot-toast";
 const CREATE_DEBATE = gql`
-  mutation CreateDebate($title: String!, $currentUserId: String!) {
-    createDebate(title: $title, CurrentUserId: $currentUserId) {
+  mutation CreateDebate($title: String!) {
+    createDebate(title: $title) {
       id
       title
     }
@@ -33,7 +31,6 @@ function page() {
     },
   });
   const router = useRouter();
-  const { data: session } = useSession();
   const [createDebate] = useMutation(CREATE_DEBATE, {
     onCompleted: (data: any) => {
       router.push(`/debate/${data.createDebate.id}`);
@@ -42,14 +39,9 @@ function page() {
 
   const onSubmit = async (data: { title: string }) => {
     try {
-      if (!session?.user?.id) {
-        toast.error("User not authenticated");
-        return;
-      }
       await createDebate({
         variables: {
           title: data.title,
-          currentUserId: session.user.id,
         },
       });
       toast.success("Debate created successfully");

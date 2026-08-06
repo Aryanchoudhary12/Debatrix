@@ -5,24 +5,9 @@ type User {
   email: String!
   image: String
   listener: Listener
-  debatesAsCurrentUser: [Debate!]!
-  debatesAsOpponent: [Debate!]!
+  debateEntries: [DebateParticipant!]!
   createdAt: String!
   updatedAt: String!
-}
-
-type Debate{
-    id:ID!
-    title:String!
-    status:String!
-    CurrentUserId:String
-    OpponentId:String
-    voteCountUser1:Int!
-    voteCountUser2:Int!
-    CurrentUser:User
-    spectators:Int!
-    Opponent:User
-    createdAt:String!
 }
 
 type Listener {
@@ -31,6 +16,7 @@ type Listener {
   user: User!
   tagline: String
   interests: [String!]!
+  likes: Int!
   listenerStats: ListenerStats!
   createdAt: String!
   updatedAt: String!
@@ -39,10 +25,10 @@ type Listener {
 type ListenerStats {
   id: ID!
   elo: Int!
-  logicScore: Int!
-  overallScore: Int!
-  persuasionScore: Int!
-  factCheckAccuracy: Int!
+  logicScore: Float!
+  overallScore: Float!
+  persuasionScore: Float!
+  factCheckAccuracy: Float!
   aiFeedbackSummary: String
   createdAt: String!
   updatedAt: String!

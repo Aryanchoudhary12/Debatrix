@@ -1,6 +1,4 @@
 "use client";
-
-import React from "react";
 import { TbDeviceTvOldFilled } from "react-icons/tb";
 import { RiRobot3Fill } from "react-icons/ri";
 
@@ -107,8 +105,8 @@ export default function AIAnalyticsDashboard({
       <div className="space-y-3">
         <MetricRow
           label="Overall Debate Score"
-          score1={debater1Metrics.overallScore}
-          score2={debater2Metrics.overallScore}
+          score1={parseFloat(debater1Metrics.overallScore.toFixed(3))}
+          score2={parseFloat(debater2Metrics.overallScore.toFixed(3))}
           debater1Name={debater1Name}
           debater2Name={debater2Name}
           isOverall={true}
@@ -117,22 +115,22 @@ export default function AIAnalyticsDashboard({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
           <MetricRow
             label="Logic & Coherence"
-            score1={debater1Metrics.logicScore}
-            score2={debater2Metrics.logicScore}
+            score1={parseFloat(debater1Metrics.logicScore.toFixed(3))}
+            score2={parseFloat(debater2Metrics.logicScore.toFixed(3))}
             debater1Name={debater1Name}
             debater2Name={debater2Name}
           />
           <MetricRow
             label="Rhetoric & Persuasion"
-            score1={debater1Metrics.persuasionScore}
-            score2={debater2Metrics.persuasionScore}
+            score1={parseFloat(debater1Metrics.persuasionScore.toFixed(3))}
+            score2={parseFloat(debater2Metrics.persuasionScore.toFixed(3))}
             debater1Name={debater1Name}
             debater2Name={debater2Name}
           />
           <MetricRow
             label="Fact-Check Accuracy"
-            score1={debater1Metrics.factCheckAccuracy}
-            score2={debater2Metrics.factCheckAccuracy}
+            score1={parseFloat(debater1Metrics.factCheckAccuracy.toFixed(3))}
+            score2={parseFloat(debater2Metrics.factCheckAccuracy.toFixed(3))}
             debater1Name={debater1Name}
             debater2Name={debater2Name}
           />

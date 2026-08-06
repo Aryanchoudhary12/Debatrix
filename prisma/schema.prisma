@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id                   String          @id @default(cuid())
-  name                 String?
-  email                String          @unique
-  emailVerified        DateTime?
-  image                String?
-  password             String?
-  accounts             Account[]
-  sessions             Session[]
-  Authenticator        Authenticator[]
-  Listener             Listener?
-  debatesAsCurrentUser Debate[]        @relation("CurrentUser")
-  debatesAsOpponent    Debate[]        @relation("Opponent")
-  roasts               Roast[]
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
+  id            String              @id @default(cuid())
+  name          String?
+  email         String              @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  accounts      Account[]
+  sessions      Session[]
+  Authenticator Authenticator[]
+  Listener      Listener?
+  debateEntries DebateParticipant[]
+  debateVotes   DebateVote[]
+  roasts        Roast[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model Account {
@@ -90,38 +90,35 @@ model Listener {
 }
 
 model Stats {
-  id                String   @id @default(cuid())
-  elo               Int      @default(1000)
-  logicScore        Int      @default(0)
-  overallScore      Int      @default(0)
-  persuasionScore   Int      @default(0)
-  factCheckAccuracy Int      @default(0)
+  id                String  @id @default(cuid())
+  elo               Int     @default(1000)
+  logicScore        Float   @default(0)
+  overallScore      Float   @default(0)
+  persuasionScore   Float   @default(0)
+  factCheckAccuracy Float   @default(0)
   aiFeedbackSummary String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  listenerId        String   @unique
-  listener          Listener @relation(fields: [listenerId], references: [id], onDelete: Cascade)
+  debatesPlayed     Int     @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  listenerId String   @unique
+  listener   Listener @relation(fields: [listenerId], references: [id], onDelete: Cascade)
 
   @@index([elo])
   @@index([overallScore])
 }
 
 model Debate {
-  id             String       @id @default(cuid())
-  title          String
-  voteCountUser1 Int          @default(0)
-  voteCountUser2 Int          @default(0)
-  spectators     Int          @default(0)
-  status         DebateStatus @default(Waiting)
-  CurrentUserId  String?
-  OpponentId     String?
-  CurrentUser    User?        @relation("CurrentUser", fields: [CurrentUserId], references: [id], onDelete: Cascade)
-  Opponent       User?        @relation("Opponent", fields: [OpponentId], references: [id], onDelete: Cascade)
-  turns          DebateTurn[]
-  startedAt      DateTime?
-  turnStartedAt  DateTime?
-  activeUserId   String?
-  createdAt      DateTime     @default(now())
+  id            String              @id @default(cuid())
+  title         String
+  status        DebateStatus        @default(Waiting)
+  spectators    Int                 @default(0)
+  startedAt     DateTime?
+  turnStartedAt DateTime?
+  activeUserId  String?
+  createdAt     DateTime            @default(now())
+  participants  DebateParticipant[]
+  turns         DebateTurn[]
+  votes         DebateVote[]
 }
 
 enum DebateStatus {
@@ -131,16 +128,57 @@ enum DebateStatus {
   Cancelled
 }
 
-model DebateTurn {
-  id        String   @id @default(cuid())
-  debateId  String
-  debate    Debate   @relation(fields: [debateId], references: [id], onDelete: Cascade)
-  speakerId String
-  content   String
-  turnIndex Int
-  createdAt DateTime @default(now())
+enum DebateRole {
+  Creator
+  Opponent
+}
 
+model DebateParticipant {
+  id                String       @id @default(cuid())
+  debateId          String
+  debate            Debate       @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              DebateRole
+  overallScore      Float?
+  logicScore        Float?
+  persuasionScore   Float?
+  factCheckAccuracy Float?
+  feedbackSummary   String?
+  turns             DebateTurn[]
+  votesReceived     DebateVote[] @relation("VotedFor")
+
+  @@unique([debateId, userId])
+  @@unique([debateId, role])
+  @@index([userId])
+}
+
+model DebateTurn {
+  id            String            @id @default(cuid())
+  debateId      String
+  debate        Debate            @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   DebateParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  content       String
+  turnIndex     Int
+  createdAt     DateTime          @default(now())
+
+  @@unique([debateId, turnIndex])
   @@index([debateId])
+}
+
+model DebateVote {
+  id            String            @id @default(cuid())
+  debateId      String
+  debate        Debate            @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  voterId       String
+  voter         User              @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   DebateParticipant @relation("VotedFor", fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime          @default(now())
+
+  @@unique([debateId, voterId])
+  @@index([participantId])
 }
 
 model Roast {
@@ -157,7 +195,7 @@ model Roast {
 model Message {
   id         String        @id @default(cuid())
   roastId    String
-  roast      Roast         @relation(fields: [roastId], references: [id])
+  roast      Roast         @relation(fields: [roastId], references: [id], onDelete: Cascade)
   content    String
   roastLevel Int?
   logicCheck String?

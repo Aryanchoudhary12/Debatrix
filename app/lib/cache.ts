@@ -1,4 +1,4 @@
-import { getRedis  } from "./redis";
+import { getRedis } from "./redis";
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -22,7 +22,9 @@ export async function getOrSetCache<T>(
 ): Promise<T> {
   try {
     const cached = await withTimeout(getRedis().get(key), 1000, `get "${key}"`);
-    if (cached) return JSON.parse(cached) as T;
+    if (cached) {
+      return JSON.parse(cached) as T;
+    }
   } catch (err) {
     console.error(`[cache] read failed for key "${key}":`, err);
   }

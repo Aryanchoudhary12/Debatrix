@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 import next from "next";
 import prisma from "./app/lib/prisma";
+import { registerDebateNamespace } from "./app/lib/socketEmitter";
 
 interface Receivers {
   [userId: string]: string[];
@@ -44,11 +45,11 @@ const roomName = (debateId: string) => `debate:${debateId}`;
 
 function getSpectatorCount(
   debateId: string,
-  currentUserId?: string,
-  opponentId?: string,
+  participantUserIds: string[],
 ): number {
+  const participantSet = new Set(participantUserIds);
   return Object.keys(debateRooms[debateId] ?? {}).filter(
-    (uid) => uid !== currentUserId && uid !== opponentId,
+    (uid) => !participantSet.has(uid),
   ).length;
 }
 
@@ -61,18 +62,23 @@ app.prepare().then(() => {
     },
   });
   const debate_io = io.of("/debate");
-
+  registerDebateNamespace(debate_io);
   debate_io.on("connection", (socket: Socket) => {
     const userId = socket.handshake.query.userId as string;
     console.log(
       `new user entered debate namespace: ${socket.id} (user ${userId})`,
     );
     let currentDebateId: string | null = null;
-
+    socket.on(
+      "debate:timeSync",
+      (clientTime: number, cb: (t: number) => void) => {
+        cb(Date.now());
+      },
+    );
     socket.on("debate:join", async (debateId: string) => {
       if (!debateId || !userId) return;
       if (currentDebateId && currentDebateId !== debateId) {
-        leaveDebateRoom(socket, currentDebateId, userId);
+        await leaveDebateRoom(socket, currentDebateId, userId);
       }
 
       socket.join(roomName(debateId));
@@ -88,7 +94,14 @@ app.prepare().then(() => {
         .to(roomName(debateId))
         .emit("receiverList", getUsersInDebate(debateId));
 
-      const count = getSpectatorCount(debateId);
+      const participants = await prisma.debateParticipant.findMany({
+        where: { debateId },
+        select: { userId: true },
+      });
+      const count = getSpectatorCount(
+        debateId,
+        participants.map((p) => p.userId),
+      );
       debate_io.to(roomName(debateId)).emit("debate:spectatorCount", { count });
 
       try {
@@ -107,17 +120,6 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("user:call", ({ to, offer }) => {
-      debate_io.to(to).emit("incoming:call", { from: socket.id, offer });
-    });
-
-    socket.on("call:accepted", ({ to, answer }) => {
-      debate_io.to(to).emit("call:accepted", { from: socket.id, answer });
-    });
-
-    socket.on("ice-candidate", ({ to, candidate }) => {
-      debate_io.to(to).emit("ice-candidate", { from: socket.id, candidate });
-    });
     socket.on("debate:passTurn", async ({ debateId, nextUserId }) => {
       const turnStartedAt = new Date();
       try {
@@ -133,47 +135,55 @@ app.prepare().then(() => {
         turnStartedAt: turnStartedAt.toISOString(),
       });
     });
-    socket.on("debate:videoToggle", ({ debateId, userId, isVideoOn }) => {
-      socket
-        .to(roomName(debateId))
-        .emit("debate:videoToggled", { userId, isVideoOn });
-    });
+
     socket.on(
       "debate:votesUpdated",
-      ({ debateId, voteCountUser1, voteCountUser2 }) => {
-        debate_io
-          .to(roomName(debateId))
-          .emit("debate:votesUpdated", { voteCountUser1, voteCountUser2 });
+      ({
+        debateId,
+        votes,
+      }: {
+        debateId: string;
+        votes: Record<string, number>;
+      }) => {
+        debate_io.to(roomName(debateId)).emit("debate:votesUpdated", { votes });
       },
     );
-    socket.on("debate:leave", (debateId: string) => {
-      leaveDebateRoom(socket, debateId, userId);
+
+    socket.on("debate:leave", async (debateId: string) => {
+      await leaveDebateRoom(socket, debateId, userId);
       if (currentDebateId === debateId) currentDebateId = null;
     });
-    socket.on("disconnect", () => {
+
+    socket.on("disconnect", async () => {
       console.log(`user disconnected from debate namespace: ${socket.id}`);
       if (currentDebateId) {
-        leaveDebateRoom(socket, currentDebateId, userId);
+        await leaveDebateRoom(socket, currentDebateId, userId);
       }
     });
   });
 
-  function leaveDebateRoom(socket: Socket, debateId: string, userId: string) {
+  async function leaveDebateRoom(
+    socket: Socket,
+    debateId: string,
+    userId: string,
+  ) {
     socket.leave(roomName(debateId));
-
     const room = debateRooms[debateId];
     if (!room || !room[userId]) return;
-
     room[userId] = room[userId].filter((id) => id !== socket.id);
     if (room[userId].length === 0) delete room[userId];
     if (Object.keys(room).length === 0) delete debateRooms[debateId];
 
-    debate_io
-      .to(roomName(debateId))
-      .emit("receiverList", getUsersInDebate(debateId));
-    debate_io
-      .to(roomName(debateId))
-      .emit("debate:spectatorCount", { count: getSpectatorCount(debateId) });
+    const participants = await prisma.debateParticipant.findMany({
+      where: { debateId },
+      select: { userId: true },
+    });
+    debate_io.to(roomName(debateId)).emit("debate:spectatorCount", {
+      count: getSpectatorCount(
+        debateId,
+        participants.map((p) => p.userId),
+      ),
+    });
   }
 
   io.on("connection", (socket: Socket) => {

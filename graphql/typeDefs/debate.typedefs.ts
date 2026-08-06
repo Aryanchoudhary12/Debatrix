@@ -1,26 +1,55 @@
 export const debateTypeDefs = `#graphql
-    type Debate{
-        id:ID!
-        title:String!
-        status:String!
-        CurrentUserId:String
-        OpponentId:String
-        voteCountUser1:Int!
-        voteCountUser2:Int!
-        CurrentUser:User
-        spectators:Int!
-        Opponent:User
-        createdAt:String!
-        startedAt:String
-        turnStartedAt:String
-        activeUserId:String
+    type Debate {
+        id: ID!
+        title: String!
+        status: DebateStatus!
+        spectators: Int!
+        createdAt: String!
+        startedAt: String
+        turnStartedAt: String
+        activeUserId: String
+        participants: [DebateParticipant!]!
+        votes: [DebateVote!]!
     }
-    type User{
-        id:ID!
-        name:String!
-        image:String
+    enum DebateStatus {
+        Waiting
+        Live
+        Completed
+        Cancelled
     }
-    type Listener{
+    type DebateParticipant {
+        id: ID!
+        userId: ID!
+        user: User!
+        debateId: ID!
+        debate: Debate!
+        votesReceived: [DebateVote!]!
+        role: Role!
+        overallScore: Float
+        logicScore: Float
+        persuasionScore: Float
+        factCheckAccuracy: Float
+        feedbackSummary: String
+    }
+    enum Role {
+        Creator
+        Opponent
+    }
+    type DebateVote {
+        id: ID!
+        debateId: ID!
+        debate: Debate!
+        voterId: ID!
+        voter: User!
+        participantId: ID!
+        participant: DebateParticipant!
+    }
+    type User {
+        id: ID!
+        name: String!
+        image: String
+    }
+    type Listener {
         id: ID!
         userId: ID!
         user: User!
@@ -29,21 +58,22 @@ export const debateTypeDefs = `#graphql
     type ListenerStats {
         id: ID!
         elo: Int!
-        logicScore: Int!
-        overallScore: Int!
-        persuasionScore: Int!
-        factCheckAccuracy: Int!
+        logicScore: Float!
+        overallScore: Float!
+        persuasionScore: Float!
+        factCheckAccuracy: Float!
         aiFeedbackSummary: String
     }
-    type Query{
-        getDebateById(id:ID!):Debate
-        getDebatesByUserId(userId:ID!):[Debate!]!
+    type Query {
+        getDebateById(id: ID!): Debate
+        getDebatesByUserId(userId: ID!): [Debate!]!
         getOpenDebates: [Debate!]!
     }
-    type Mutation{
-        createDebate(title:String!,CurrentUserId:String!):Debate!
-        joinDebate(debateId:ID!,userId:String!):Debate!
-        voteOnDebate(debateId: ID!, votedForUserId: String!, previousVoteUserId: String): Debate!
+    type Mutation {
+        createDebate(title: String!): Debate!
+        joinDebate(debateId: ID!, userId: ID!): Debate!
+        voteOnDebate(debateId: ID!, participantId: ID!): DebateVote!
         updateMaxSpectators(debateId: ID!, count: Int!): Debate!
+        cancelDebate(debateId: ID!): Debate!
     }
 `;

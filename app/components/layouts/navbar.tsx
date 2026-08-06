@@ -17,7 +17,6 @@ const navItems: NavItem[] = [
   { name: "Discover", href: "/discover" },
   { name: "Profile", href: "/profile" },
 ];
-
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -78,7 +77,7 @@ export default function Header() {
           ? appTheme === "dark"
             ? "rgba(0, 0, 0, 0.8)"
             : "rgba(255, 255, 255, 0.8)"
-          : "transparent",
+          : "rgba(0, 0, 0, 0)",
         boxShadow: isScrolled ? "0 8px 32px rgba(0, 0, 0, 0.1)" : "none",
       }}
     >

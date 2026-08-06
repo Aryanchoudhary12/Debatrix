@@ -1,32 +1,33 @@
 "use client";
-
-import { useCallback, useEffect, useRef } from "react";
 import Button from "@/app/components/ui/button";
-import { FaMicrophone, FaVideo, FaVideoSlash } from "react-icons/fa";
-import { IoMicOff } from "react-icons/io5";
-import peer from "@/app/service/peer";
+import { FaMicrophone } from "react-icons/fa";
+import { IoMicOff, IoMic } from "react-icons/io5";
 import Avatar from "@/app/components/ui/avatarProvider";
+
 export interface DebaterCardProps {
   name: string;
   title: string;
   avatarUrl: string;
   isActive: boolean;
   turnTimeLeft: number;
-  isVideoOn: boolean;
-  onToggleVideo: () => void;
-  onPassTurn: () => void;
-  onLocalStream: (stream: MediaStream) => void;
+  isSpeaking: boolean;
+  isLocal: boolean;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
+  onPassTurn: () => void | undefined;
 }
+
 export default function DebaterCard({
   name,
   title,
   avatarUrl,
   isActive,
   turnTimeLeft,
-  isVideoOn,
-  onToggleVideo,
+  isSpeaking,
+  isLocal,
+  isMuted,
+  onToggleMute,
   onPassTurn,
-  onLocalStream,
 }: DebaterCardProps) {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -35,67 +36,23 @@ export default function DebaterCard({
   };
 
   const turnProgress = (turnTimeLeft / 120) * 100;
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  useEffect(() => {
-    let cancelled = false;
 
-    const acquireMedia = async () => {
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-      } catch (err) {
-        console.warn("No camera available, falling back to audio-only:", err);
-        try {
-          return await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (audioErr) {
-          console.warn("No microphone available either:", audioErr);
-          return null;
-        }
-      }
-    };
-    (async () => {
-      const s = await acquireMedia();
-      if (!s) return;
-      if (cancelled) {
-        s.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      streamRef.current = s;
-      if (videoRef.current) videoRef.current.srcObject = s;
-      onLocalStream(s);
-    })();
-
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, [onLocalStream]);
-
-  useEffect(() => {
-    if (isVideoOn && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-    }
-  }, [isVideoOn]);
-
-  useEffect(() => {
-    peer.toggleTrack("video", isVideoOn);
-  }, [isVideoOn]);
   return (
     <div
       className={`relative flex flex-col justify-between p-5 rounded-xl border transition-all duration-300 bg-muted/50 backdrop-blur-lg font-poppins ${
         isActive
           ? "border-primary/50 shadow-[0_0_20px_rgba(59,130,246,0.15)] ring-2 ring-primary/10"
-          : "border-primary/10 "
+          : "border-primary/10"
       }`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {isActive ? (
             <span className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-accent text-muted rounded-full">
-              <FaMicrophone className="w-3.5 h-3.5 animate-pulse" /> Speaking
+              <FaMicrophone
+                className={`w-3.5 h-3.5 ${isSpeaking ? "animate-pulse" : ""}`}
+              />{" "}
+              Speaking
             </span>
           ) : (
             <span className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-muted text-secondary rounded-full border border-primary/20">
@@ -122,40 +79,33 @@ export default function DebaterCard({
           />
         </div>
       )}
+      <div
+        className={`relative w-full aspect-video rounded-lg overflow-hidden bg-blue-300/20 border flex items-center justify-center mb-2 transition-colors ${
+          isSpeaking ? "border-green-500/60" : "border-primary/10"
+        }`}
+      >
+        <div className="flex flex-col gap-4 items-center justify-center p-6 text-center">
+          <Avatar
+            src={avatarUrl}
+            username={name}
+            size="xl"
+            className={`rounded-xl ${isSpeaking ? "ring-4 ring-green-500/50" : ""}`}
+          />
+          <span className="text-xs text-secondary font-medium">
+            {isSpeaking ? "Speaking now" : "Audio only"}
+          </span>
+        </div>
 
-      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-blue-300/20 border border-primary/10 flex items-center justify-center mb-2">
-        {isVideoOn && isActive ? (
-          <div className="relative w-full h-full  flex flex-col items-center justify-center">
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/60 px-2 py-1 rounded text-[10px] text-white tracking-wider font-mono uppercase">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />{" "}
-              Live Feed
-            </div>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="relative h-full w-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4 items-center justify-center p-6 text-center animate-fade-in">
-            <Avatar src={avatarUrl} username={name} size="xl" className="rounded-xl" />
-            <span className="text-xs text-secondary font-medium">
-              Camera Disabled • Using Avatar
-            </span>
-          </div>
-        )}
-
-        {isActive && (
+        {isLocal && onToggleMute && (
           <Button
-            onClick={onToggleVideo}
+            onClick={onToggleMute}
             className="absolute! bottom-3 right-3"
-            title={isVideoOn ? "Turn Video Off" : "Turn Video On"}
+            title={isMuted ? "Unmute mic" : "Mute mic"}
           >
-            {isVideoOn ? (
-              <FaVideo className="w-4 h-4 " />
+            {isMuted ? (
+              <IoMicOff className="w-4 h-4" />
             ) : (
-              <FaVideoSlash className="w-4 h-4 " />
+              <IoMic className="w-4 h-4" />
             )}
           </Button>
         )}
@@ -169,8 +119,8 @@ export default function DebaterCard({
           <p className="text-xs text-secondary font-medium">{title}</p>
         </div>
 
-        {isActive && (
-          <Button onClick={onPassTurn} variant="outline">
+        {isActive && isLocal && (
+          <Button onClick={onPassTurn} variant="outline" className="rounded-md">
             Pass Turn
           </Button>
         )}

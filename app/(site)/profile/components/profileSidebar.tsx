@@ -9,7 +9,6 @@ import { useMutation } from "@apollo/client/react";
 import Avatar from "@/app/components/ui/avatarProvider";
 import OnBoardModel from "./onBoardModel";
 import { useSession } from "next-auth/react";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
 interface ProfileSidebarProps {
   listenerId: string;
   username: string;
@@ -78,12 +77,9 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   imageUrl,
   tagline,
   elo,
-  likes: initialLikes,
   interests,
   joinedDate,
 }) => {
-  const [likes, setLikes] = useState(initialLikes);
-  const [hasLiked, setHasLiked] = useState(false);
   const { data: session } = useSession();
   const [updateListener] = useMutation<UpdateListenerData, UpdateListenerVars>(
     UPDATE_LISTENER,
@@ -108,23 +104,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     CREATE_LISTENER,
     {},
   );
-
-  const handleLike = () => {
-    if (!hasLiked) {
-      setLikes(likes + 1);
-      setHasLiked(true);
-    } else {
-      setLikes(likes - 1);
-      setHasLiked(false);
-    }
-  };
-
-  const handleShare = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Profile link copied to clipboard!");
-    }
-  };
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -220,35 +199,10 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <span className="font-bold">Member Since</span>
             <span className="text-secondary font-semibold">{joinedDate}</span>
           </div>
-          <div className="flex justify-between text-accent">
-            <span className="font-bold">Profile Likes</span>
-            <span className="flex items-center gap-1 text-primary font-bold text-sm">
-              {likes} <FaHeart />
-            </span>
-          </div>
         </div>
       </div>
 
       <div className="pt-6 space-y-3">
-        <Button
-          onClick={handleLike}
-          className="rounded-md w-full"
-          variant={hasLiked ? "outline" : "secondary"}
-        >
-          {hasLiked ? (
-            <span className="flex items-center gap-1">
-              {" "}
-              <FaHeart />
-              Liked
-            </span>
-          ) : (
-            <span className="flex items-center gap-1">
-              {" "}
-              <FaRegHeart />
-              Like Profile
-            </span>
-          )}
-        </Button>
         <OnBoardModel onSubmit={onSubmit} />
       </div>
     </aside>

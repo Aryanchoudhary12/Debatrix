@@ -44,19 +44,29 @@ export const listenerResolvers = {
                 id: true,
                 name: true,
                 image: true,
-                debatesAsCurrentUser: {
-                  include: {
-                    CurrentUser: { select: { name: true } },
-                    Opponent: { select: { name: true } },
-                  },
-                },
-                debatesAsOpponent: {
-                  include: {
-                    CurrentUser: { select: { name: true } },
-                    Opponent: { select: { name: true } },
-                  },
-                },
                 createdAt: true,
+                debateEntries: {
+                  select: {
+                    role: true,
+                    debate: {
+                      select: {
+                        id: true,
+                        title: true,
+                        status: true,
+                        spectators: true,
+                        createdAt: true,
+                        participants: {
+                          select: {
+                            id: true,
+                            role: true,
+                            user: { select: { name: true,image: true } },
+                            votesReceived: { select: { id: true } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
           },

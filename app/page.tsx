@@ -13,8 +13,11 @@ import versus from "@/public/versus.jpg";
 import { BsFire } from "react-icons/bs";
 import { FaTrophy } from "react-icons/fa";
 import { Globe } from "./components/blocks/globe";
+import {useSession} from "next-auth/react"; 
 export default function Home() {
   const router = useRouter();
+  const { data: session } = useSession();
+  console.log("Session data:", session);
   const features = [
     {
       title: "Live 1v1 debates",
@@ -27,11 +30,11 @@ export default function Home() {
         <Image
           src={versus}
           alt="AI judging a debate"
-          className="rounded-lg object-cover w-full h-40"
+          className="rounded-lg object-cover w-full h-36"
         />
       ),
       className:
-        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20 h-full",
     },
     {
       title: "AI-judged, every round",
@@ -44,11 +47,11 @@ export default function Home() {
         <Image
           src={ai}
           alt="AI judging a debate"
-          className="rounded-lg object-cover w-full h-40"
+          className="rounded-lg object-cover w-full h-36"
         />
       ),
       className:
-        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20 h-full",
     },
     {
       title: "Ranked ELO ladder",
@@ -58,9 +61,9 @@ export default function Home() {
         <FaTrophy className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
       ),
       className:
-        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+        "md:col-span-2 bg-muted/50 backdrop-blur-lg  border border-primary/20 h-full",
       header: (
-        <div className="relative w-full h-40 rounded-lg overflow-hidden">
+        <div className="relative w-full h-36 rounded-lg overflow-hidden">
           <Globe className="-top-10" />
         </div>
       ),
@@ -73,12 +76,12 @@ export default function Home() {
         <BsFire className="size-8 text-accent p-2 rounded-lg bg-accent/10" />
       ),
       className:
-        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20",
+        "md:col-span-1 bg-muted/50 backdrop-blur-lg  border border-primary/20 h-full",
       header: (
         <Image
           src={roast}
           alt="AI roasting a debate"
-          className="rounded-lg object-cover w-full h-40"
+          className="rounded-lg object-cover w-full h-36"
         />
       ),
     },

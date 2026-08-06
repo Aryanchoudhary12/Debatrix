@@ -29,8 +29,8 @@ export const roastTypeDefs = `#graphql
     }
     type ListenerStats{
         listenerId:ID!
-        overallScore: Int!
-        persuasionScore: Int!
+        overallScore: Float!
+        persuasionScore: Float!
         aiFeedbackSummary: String
     }
     enum MessageSender {

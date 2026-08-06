@@ -20,7 +20,7 @@ export async function generateRoastFeedback(
   const systemPrompt = `You are a witty, sharp debate coach AI running a "Roast My Argument" feature. A user submits an argument or claim, and you respond with a roast plus structured metadata.
 
 Fields to return:
-- roastText: a short, punchy, entertaining critique (2-4 sentences). Witty and direct, but never cruel or personal — target the ARGUMENT's weaknesses (logic gaps, unsupported claims, weak rhetoric), never the person.
+- roastText: a short, punchy, entertaining critique (3-4 sentences). Witty and direct, but never cruel or personal — target the ARGUMENT's weaknesses (logic gaps, unsupported claims, weak rhetoric), never the person and correct the arguments and claims of the user make him relevant to the topic.
 - roastLevel: integer 1-100, how brutal/savage this particular roast is (1 = gentle, 10 = merciless).
 - logicCheck: one short phrase (under 10 words) verdict on the argument's logical validity, e.g. "Solid structure, weak evidence" or "Classic strawman fallacy".
 - burnScore: integer 0-100, how entertaining/savage the roast itself is as a piece of writing.
@@ -65,7 +65,6 @@ Respond with ONLY valid JSON, no markdown, no code fences. Exact shape:
     const num = typeof n === "number" ? n : 0;
     return Math.max(0, Math.min(100, Math.round(num)));
   };
-
 
   return {
     roastText:

@@ -27,7 +27,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         <div className="my-6 flex items-center justify-center">
           <div className="relative flex items-center justify-center h-28 w-28 rounded-full border-8 border-primary/20 border-t-secondary">
             <span className="text-3xl font-extrabold text-foreground">
-              {overallScore}
+              {overallScore.toFixed(1)}
             </span>
             <span className="absolute bottom-4 text-[10px] uppercase font-bold text-secondary">
               Rating
@@ -42,7 +42,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       <div className="rounded-2xl bg-muted/40 backdrop-blur-lg border border-primary/20 p-5 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-accent">AI Coach Feedback</h3>
+            <h3 className="text-sm font-bold text-accent">
+              AI Feedback of previous debate
+            </h3>
           </div>
           <p className="text-xs text-secondary mt-3 leading-relaxed bg-muted p-3 rounded-xl border border-primary/20">
             &ldquo;{aiFeedbackSummary}&rdquo;
@@ -52,7 +54,7 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           <div className="flex justify-between text-secondary">
             <span>Fact-Check Accuracy</span>
             <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-              {factCheckAccuracy}%
+              {factCheckAccuracy.toFixed(2)}%
             </span>
           </div>
           <div className="flex justify-between text-secondary">
@@ -70,24 +72,26 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           <div>
             <div className="flex justify-between text-xs font-medium mb-1">
               <span className="text-secondary">Logical Rigor</span>
-              <span className="text-indigo-400">{logicScore}%</span>
+              <span className="text-indigo-400">{logicScore.toFixed(2)}%</span>
             </div>
             <div className="h-2 w-full rounded-full bg-primary overflow-hidden">
               <div
                 className="h-full bg-indigo-500 rounded-full"
-                style={{ width: `${logicScore}%` }}
+                style={{ width: `${logicScore.toFixed(2)}%` }}
               />
             </div>
           </div>
           <div>
             <div className="flex justify-between text-xs font-medium mb-1">
               <span className="text-secondary">Emotional Persuasion</span>
-              <span className="text-primary">{persuasionScore}%</span>
+              <span className="text-primary">
+                {persuasionScore.toFixed(2)}%
+              </span>
             </div>
             <div className="h-2 w-full rounded-full bg-primary overflow-hidden">
               <div
                 className="h-full bg-purple-500 rounded-full"
-                style={{ width: `${persuasionScore}%` }}
+                style={{ width: `${persuasionScore.toFixed(2)}%` }}
               />
             </div>
           </div>

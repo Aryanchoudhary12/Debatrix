@@ -18,9 +18,5 @@ const prisma =
     ],
   });
 
-prisma.$on("query" as never, (e: any) => {
-  console.log("[prisma query]", e.query, e.params);
-});
-
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 export default prisma;

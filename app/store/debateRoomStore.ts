@@ -2,26 +2,27 @@
 import { create } from "zustand";
 import io from "socket.io-client";
 import type { Socket } from "socket.io-client";
-import peer from "@/app/service/peer";
+import { Room, RoomEvent } from "livekit-client";
+
 interface DebateRoomStore {
   currentDebateId: string | null;
-  usersInRoom: string[];
   spectatorCount: number;
   socket: Socket | null;
-  votes: { user1: number; user2: number };
+  _joinToken?: symbol | null;
+  votes: Record<string, number>;
   userVote: string | null;
-  setVotes: (voteCountUser1: number, voteCountUser2: number) => void;
-  setUserVote: (userId: string | null) => void;
+  livekitRoom: Room | null;
+  connectionState: "idle" | "connecting" | "connected" | "error";
+  setVotes: (votes: Record<string, number>) => void;
+  setUserVote: (participantId: string | null) => void;
   subscribeToDebateRoom: (roomId: string, userId: string) => void;
   unsubscribeFromDebateRoom: (roomId: string) => void;
-  handleCallUser: (socketId: any) => void;
-  sendIceCandidate: (to: string, candidate: RTCIceCandidate) => void;
-  subscribeToVotes: () => void;
-  broadcastVoteUpdate: (
-    debateId: string,
-    voteCountUser1: number,
-    voteCountUser2: number,
-  ) => void;
+  joinAudio: (
+    roomId: string,
+    identity: string,
+    role: "debater" | "spectator",
+  ) => Promise<void>;
+  leaveAudio: () => Promise<void>;
 }
 
 const URL = process.env.NEXT_PUBLIC_APP_URL
@@ -30,85 +31,87 @@ const URL = process.env.NEXT_PUBLIC_APP_URL
 
 export const useDebateRoom = create<DebateRoomStore>((set, get) => ({
   currentDebateId: null,
-  usersInRoom: [],
   spectatorCount: 0,
   socket: null,
-  votes: { user1: 0, user2: 0 },
+  _joinToken: null,
+  votes: {},
   userVote: null,
-  setVotes: (voteCountUser1, voteCountUser2) => {
-    set({ votes: { user1: voteCountUser1, user2: voteCountUser2 } });
-  },
-
-  setUserVote: (userId) => set({ userVote: userId }),
-  subscribeToDebateRoom: (roomId: string, userId: string) => {
+  livekitRoom: null,
+  connectionState: "idle",
+  setVotes: (votes) => set({ votes }),
+  setUserVote: (participantId) => set({ userVote: participantId }),
+  subscribeToDebateRoom: (roomId, userId) => {
     let socket = get().socket;
     if (!socket) {
       socket = io(URL, { query: { userId } });
-      set({ socket: socket });
+      set({ socket });
     }
-    if (!socket) return;
     if (get().currentDebateId === roomId) return;
     const previous = get().currentDebateId;
-    if (previous) {
-      get().unsubscribeFromDebateRoom(previous);
-    }
-
-    socket.off("receiverList");
-    socket.on("receiverList", (userIds: string[]) => {
-      set({ usersInRoom: userIds });
-    });
-
+    if (previous) get().unsubscribeFromDebateRoom(previous);
     socket.off("debate:spectatorCount");
+    socket.off("debate:votesUpdated");
     socket.on("debate:spectatorCount", ({ count }: { count: number }) => {
       set({ spectatorCount: count });
     });
-
+    socket.on(
+      "debate:votesUpdated",
+      ({ votes }: { votes: Record<string, number> }) => {
+        set({ votes });
+      },
+    );
     socket.emit("debate:join", roomId);
-
     set({ currentDebateId: roomId });
   },
-  handleCallUser: async (socketId: any) => {
-    const socket = get().socket;
-    if (!socket) return;
-    const offer = await peer.getOffer();
-    socket.emit("user:call", { to: socketId, offer });
-  },
-  sendIceCandidate: (to: string, candidate: RTCIceCandidate) => {
-    const socket = get().socket;
-    socket?.emit("ice-candidate", { to, candidate });
-  },
-  unsubscribeFromDebateRoom: (roomId: string) => {
+  unsubscribeFromDebateRoom: (roomId) => {
     const socket = get().socket;
     if (!socket) return;
     socket.emit("debate:leave", roomId);
-    socket.off("receiverList");
     socket.off("debate:spectatorCount");
-    set({ currentDebateId: null, usersInRoom: [], spectatorCount: 0 });
   },
-  subscribeToVotes: () => {
-    const socket = get().socket;
-    if (!socket) return;
-    socket.off("debate:votesUpdated");
-    socket.on(
-      "debate:votesUpdated",
-      ({
-        voteCountUser1,
-        voteCountUser2,
-      }: {
-        voteCountUser1: number;
-        voteCountUser2: number;
-      }) => {
-        get().setVotes(voteCountUser1, voteCountUser2);
-      },
-    );
+  joinAudio: async (roomId, identity, role) => {
+    const callId = Symbol();
+    set({ connectionState: "connecting", _joinToken: callId } as any);
+    try {
+      const res = await fetch(
+        `/api/livekit-token?room=${roomId}&identity=${identity}&role=${role}`,
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `Token fetch failed (${res.status}): ${text.slice(0, 200)}`,
+        );
+      }
+      const { token, url } = await res.json();
+      if (get()._joinToken !== callId) return;
+      const room = new Room({ adaptiveStream: true, dynacast: true });
+      await room.connect(url, token);
+      if (get()._joinToken !== callId) {
+        await room.disconnect();
+        return;
+      }
+      if (role === "debater") {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      }
+      room.on(RoomEvent.Disconnected, () => {
+        if (get()._joinToken === callId) {
+          set({ connectionState: "idle", livekitRoom: null });
+        }
+      });
+      set({ livekitRoom: room, connectionState: "connected" });
+    } catch (err) {
+      if (get()._joinToken === callId) {
+        console.error("[livekit] join failed:", err);
+        set({ connectionState: "error" });
+      }
+    }
   },
-
-  broadcastVoteUpdate: (debateId, voteCountUser1, voteCountUser2) => {
-    const socket = get().socket;
-    socket?.emit("debate:votesUpdated", {
-      debateId,
-      voteCountUser1,
-      voteCountUser2,
-    });
+  leaveAudio: async () => {
+    set({ _joinToken: null } as any);
+    const room = get().livekitRoom;
+    if (room) {
+      await room.disconnect();
+    }
+    set({ livekitRoom: null, connectionState: "idle" });
   },
 }));

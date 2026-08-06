@@ -15,20 +15,30 @@ const GET_ACTIVE_DEBATES = gql`
     getOpenDebates {
       id
       title
-      CurrentUser {
-        id
-        name
-      }
-      voteCountUser1
-      voteCountUser2
       spectators
       status
+      createdAt
+      startedAt
+      participants {
+        id
+        userId
+        role
+        user {
+          id
+          name
+        }
+        votesReceived {
+          id
+          voterId
+          participantId
+        }
+      }
     }
   }
 `;
 
 const JOIN_DEBATE = gql`
-  mutation JoinDebate($debateId: ID!, $userId: String!) {
+  mutation JoinDebate($debateId: ID!, $userId: ID!) {
     joinDebate(debateId: $debateId, userId: $userId) {
       id
     }
@@ -41,7 +51,7 @@ function Discover() {
   const { data, loading } = useQuery<{ getOpenDebates: any[] }>(
     GET_ACTIVE_DEBATES,
   );
-
+  console.log("Active debates data:", data);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [joinDebate] = useMutation(JOIN_DEBATE, {
     onCompleted: (data: any) => {
@@ -73,11 +83,11 @@ function Discover() {
     id: debate.id,
     category: "Clash of Ideas",
     topic: debate.title,
-    opponent: "Waiting for opponent...",
+    opponent:debate.participants.find((p: any) => p.role === "Creator")?.user?.name || "TBD",
     status: debate.status,
     spectators: debate.spectators,
-    userVotes: debate.voteCountUser1,
-    opponentVotes: debate.voteCountUser2,
+    userVotes: 0,
+    opponentVotes: 0,
   }));
 
   if (loading) return <Loading />;
