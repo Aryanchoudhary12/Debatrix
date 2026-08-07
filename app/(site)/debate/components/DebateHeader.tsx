@@ -97,7 +97,7 @@ export default function DebateHeader({
             loading={cancelling}
           >
             <TiCancel className="size-5"/>
-            {confirming ? "Confirm Cancel?" : "Cancel"}
+            {confirming ? "Confirm?" : "Cancel"}
           </Button>
         )}
       </div>
