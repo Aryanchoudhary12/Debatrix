@@ -12,13 +12,13 @@ import { CgSpinner } from "react-icons/cg";
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client/react";
 import Loading from "@/app/loading";
-import { SquigglyText } from "@/app/components/ui/squiggly-text";
 import "@livekit/components-styles";
 import LiveDebateStage from "../components/liveDebateStage";
 import { RoomContext } from "@livekit/components-react";
 import { useLiveJiggleMetrics } from "@/app/store/useLiveJiggleMetrics";
 import NoData from "@/app/components/blocks/no-data";
 import { PiNotepadFill } from "react-icons/pi";
+import DebateResult from "../components/debateResult";
 
 const INITIAL_GLOBAL_TIME = 600;
 const INITIAL_TURN_TIME = 120;
@@ -147,7 +147,6 @@ export default function DebateArena() {
   const participants: any[] = debate?.participants ?? [];
   const creator = participants.find((p) => p.role === "Creator");
   const opponentRole = participants.find((p) => p.role === "Opponent");
-
   const isCurrentUser = creator?.userId === session?.user?.id;
   const isParticipant =
     isCurrentUser || opponentRole?.userId === session?.user?.id;
@@ -406,19 +405,21 @@ export default function DebateArena() {
           </div>
         )
       ) : (
-        <div className="relative flex flex-col justify-center items-center p-6 h-80 rounded-xl border transition-all duration-300 bg-muted/50 backdrop-blur-lg font-poppins border-primary/10">
-          <SquigglyText
-            stepDuration={70}
-            scale={[6, 9]}
-            className="text-amber-500 font-montserrat font-extrabold text-3xl md:text-4xl"
-          >
-            Debate Over !
-          </SquigglyText>
-          <p className="text-accent mt-4 font-poppins text-center text-sm font-medium max-w-lg">
-            The debate has concluded and the final scores have been calculated.
-            You can now view the AI analytics and audience voting results below.
-          </p>
-        </div>
+        <DebateResult
+          totalVotes={Object.values(votes).reduce((a, b) => a + b, 0)}
+          participants={[
+            {
+              name: me?.user?.name ?? "You",
+              image: me?.user?.image ?? "",
+              votes: votes[me?.id ?? ""] ?? 0,
+            },
+            {
+              name: opponent?.user?.name ?? "Opponent",
+              image: opponent?.user?.image ?? "",
+              votes: votes[opponent?.id ?? ""] ?? 0,
+            },
+          ]}
+        />
       )}
 
       {opponentJoined && debate?.status === "Live" && (

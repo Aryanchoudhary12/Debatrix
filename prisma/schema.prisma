@@ -90,18 +90,18 @@ model Listener {
 }
 
 model Stats {
-  id                String  @id @default(cuid())
-  elo               Int     @default(1000)
-  logicScore        Float   @default(0)
-  overallScore      Float   @default(0)
-  persuasionScore   Float   @default(0)
-  factCheckAccuracy Float   @default(0)
+  id                String   @id @default(cuid())
+  elo               Int      @default(1000)
+  logicScore        Float    @default(0)
+  overallScore      Float    @default(0)
+  persuasionScore   Float    @default(0)
+  factCheckAccuracy Float    @default(0)
   aiFeedbackSummary String?
-  debatesPlayed     Int     @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  listenerId String   @unique
-  listener   Listener @relation(fields: [listenerId], references: [id], onDelete: Cascade)
+  debatesPlayed     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  listenerId        String   @unique
+  listener          Listener @relation(fields: [listenerId], references: [id], onDelete: Cascade)
 
   @@index([elo])
   @@index([overallScore])
@@ -182,12 +182,13 @@ model DebateVote {
 }
 
 model Roast {
-  id        String    @id @default(cuid())
-  title     String
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  Message[]
-  createdAt DateTime  @default(now())
+  id         String      @id @default(cuid())
+  title      String
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  createdAt  DateTime    @default(now())
+  roastStats RoastStats?
 
   @@index([userId])
 }
@@ -205,6 +206,15 @@ model Message {
   createdAt  DateTime      @default(now())
 
   @@index([roastId])
+}
+
+model RoastStats {
+  id                String  @id @default(cuid())
+  overallScore      Float   @default(0)
+  persuasionScore   Float   @default(0)
+  aiFeedbackSummary String?
+  roastId           String  @unique
+  roast             Roast   @relation(fields: [roastId], references: [id], onDelete: Cascade)
 }
 
 enum MessageSender {

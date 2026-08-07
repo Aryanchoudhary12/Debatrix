@@ -5,12 +5,12 @@ export const roastTypeDefs = `#graphql
         user:User
         messages:[Message]
         createdAt:String
+        roastStats:RoastStats
     }
     type User{
         id:ID!
         name:String!
         image:String
-        Listener:Listener
     }
     type Message{
         id:ID!
@@ -23,15 +23,11 @@ export const roastTypeDefs = `#graphql
         prompt:String
         createdAt:String!
     }
-    type Listener{
+    type RoastStats{
         id:ID!
-        ListenerStats:ListenerStats
-    }
-    type ListenerStats{
-        listenerId:ID!
-        overallScore: Float!
-        persuasionScore: Float!
-        aiFeedbackSummary: String
+        overallScore:Float!
+        persuasionScore:Float!
+        aiFeedbackSummary:String
     }
     enum MessageSender {
         AI
@@ -43,7 +39,7 @@ export const roastTypeDefs = `#graphql
     }
     type Mutation{
         createRoast(title:String!,userId:String!):Roast
-        createMessageUser(roastId:ID!,content:String!,sender:MessageSender!,prompt:String):Message
-        AiFeedBack(roastId:ID!,prompt:String!):Message
+        createMessageUser(roastId:ID!,content:String!,prompt:String):Message
+        AiFeedBack(roastId:ID!,prompt:String!,title:String!):Message
     }
 `;

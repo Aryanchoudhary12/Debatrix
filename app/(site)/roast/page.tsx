@@ -35,14 +35,6 @@ const GET_LISTENER_BY_USER_ID = gql`
       userId
       tagline
       interests
-      listenerStats {
-        elo
-        logicScore
-        overallScore
-        persuasionScore
-        factCheckAccuracy
-        aiFeedbackSummary
-      }
       user {
         name
         image
@@ -67,6 +59,11 @@ const GET_ROASTS_BY_ID = gql`
         prompt
         createdAt
       }
+      roastStats {
+        overallScore
+        persuasionScore
+        aiFeedbackSummary
+      }
     }
   }
 `;
@@ -74,9 +71,8 @@ const CREATE_MESSAGE_USER = gql`
   mutation createMessageUser(
     $roastId: ID!
     $content: String!
-    $sender: MessageSender!
   ) {
-    createMessageUser(roastId: $roastId, content: $content, sender: $sender) {
+    createMessageUser(roastId: $roastId, content: $content) {
       id
       content
       sender
@@ -89,8 +85,8 @@ const CREATE_MESSAGE_USER = gql`
 `;
 
 const AI_FEEDBACK = gql`
-  mutation AiFeedBack($roastId: ID!, $prompt: String!) {
-    AiFeedBack(roastId: $roastId, prompt: $prompt) {
+  mutation AiFeedBack($roastId: ID!, $prompt: String!, $title: String!) {
+    AiFeedBack(roastId: $roastId, prompt: $prompt, title: $title) {
       id
       content
       sender
@@ -154,6 +150,11 @@ export default function RoastBotPage() {
       id: string;
       title: string;
       messages: RoastMessage[];
+      roastStats: {
+        overallScore: number;
+        persuasionScore: number;
+        aiFeedbackSummary: string;
+      };
     };
   }>(GET_ROASTS_BY_ID, {
     variables: { id: roastId },
@@ -238,10 +239,14 @@ export default function RoastBotPage() {
     setIsAiThinking(true);
     try {
       await createMessageUser({
-        variables: { roastId, content, sender: "User" },
+        variables: { roastId, content },
       });
       await aiFeedback({
-        variables: { roastId, prompt: content },
+        variables: {
+          roastId,
+          prompt: content,
+          title: roastData?.getRoastById?.title || "Untitled Roast",
+        },
       });
     } catch (err) {
       console.error("Roast flow failed:", err);
@@ -267,12 +272,12 @@ export default function RoastBotPage() {
             "Unknown User"
           }
           imageUrl={data?.listenerByUser?.user.image || undefined}
-          overallScore={data?.listenerByUser?.listenerStats?.overallScore || 0}
+          overallScore={roastData?.getRoastById?.roastStats?.overallScore || 0}
           persuasionScore={
-            data?.listenerByUser?.listenerStats?.persuasionScore || 0
+            roastData?.getRoastById?.roastStats?.persuasionScore || 0
           }
           aiFeedbackSummary={
-            data?.listenerByUser?.listenerStats?.aiFeedbackSummary ||
+            roastData?.getRoastById?.roastStats?.aiFeedbackSummary ||
             "No AI feedback available yet. Engage in debates to receive insights."
           }
           open={open}
@@ -294,7 +299,7 @@ export default function RoastBotPage() {
             {error && (
               <Error
                 title="Couldn't load your profile"
-                description="Some stats in the sidebar may be out of date."
+                description={`Some stats in the sidebar may be out of date.${error.message}`}
               />
             )}
 
@@ -308,7 +313,7 @@ export default function RoastBotPage() {
             {roastError && (
               <Error
                 title={"Error Loading Roast"}
-                description="Failed to load this roast. Try again."
+                description={`Failed to load this roast. Try again.${roastError.message}`}
               />
             )}
 

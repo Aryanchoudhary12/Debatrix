@@ -16,6 +16,7 @@ export const roastResolvers = {
           include: {
             user: true,
             messages: true,
+            roastStats: true,
           },
         }),
       );
@@ -26,15 +27,22 @@ export const roastResolvers = {
       ctx: GraphQLContext,
     ) => {
       const cacheKey = `roasts:${args.id}`;
-      return getOrSetCache(cacheKey, 60, () =>
-        ctx.prisma.roast.findUnique({
-          where: { id: args.id },
-          include: {
-            user: true,
-            messages: true,
-          },
-        }),
-      );
+      try {
+        const result = await getOrSetCache(cacheKey, 60, () =>
+          ctx.prisma.roast.findUnique({
+            where: { id: args.id },
+            include: {
+              user: true,
+              messages: true,
+              roastStats: true,
+            },
+          }),
+        );
+        return result;
+      } catch (error) {
+        console.error("Error fetching roast by ID:", error);
+        throw new Error("Failed to fetch roast by ID.");
+      }
     },
   },
   Mutation: {
@@ -47,6 +55,9 @@ export const roastResolvers = {
         data: {
           title: args.title,
           userId: args.userId,
+          roastStats: {
+            create: {},
+          },
         },
       });
       await invalidateCache(`roasts:byUser:${args.userId}`);
@@ -74,7 +85,7 @@ export const roastResolvers = {
     },
     AiFeedBack: async (
       _parent: unknown,
-      args: { roastId: string; prompt: string },
+      args: { roastId: string; prompt: string; title: string },
       ctx: GraphQLContext,
     ) => {
       if (!ctx.userId) {
@@ -93,12 +104,8 @@ export const roastResolvers = {
       const feedback = await generateRoastFeedback(
         args.prompt,
         roast.messages.map((m) => ({ sender: m.sender, content: m.content })),
+        args.title,
       );
-
-      const listener = await ctx.prisma.listener.findUnique({
-        where: { userId: ctx.userId },
-      });
-
       const [aiMessage] = await ctx.prisma.$transaction([
         ctx.prisma.message.create({
           data: {
@@ -111,28 +118,22 @@ export const roastResolvers = {
             burnScore: feedback.burnScore,
           },
         }),
-        ...(listener
-          ? [
-              ctx.prisma.stats.upsert({
-                where: { listenerId: listener.id },
-                create: {
-                  listenerId: listener.id,
-                  overallScore: feedback.overallScore,
-                  persuasionScore: feedback.persuasionScore,
-                  aiFeedbackSummary: feedback.roastText,
-                },
-                update: {
-                  overallScore: feedback.overallScore,
-                  persuasionScore: feedback.persuasionScore,
-                  aiFeedbackSummary: feedback.roastText,
-                },
-              }),
-            ]
-          : []),
+        ctx.prisma.roastStats.upsert({
+          where: { roastId: args.roastId },
+          create: {
+            roastId: args.roastId,
+            overallScore: feedback.overallScore,
+            persuasionScore: feedback.persuasionScore,
+            aiFeedbackSummary: feedback.roastText,
+          },
+          update: {
+            overallScore: feedback.overallScore,
+            persuasionScore: feedback.persuasionScore,
+            aiFeedbackSummary: feedback.roastText,
+          },
+        }),
       ]);
-
       await invalidateCache(`roasts:${args.roastId}`);
-      await invalidateCache(`user:${ctx.userId}`);
 
       return aiMessage;
     },

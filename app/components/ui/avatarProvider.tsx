@@ -28,6 +28,7 @@ interface AvatarProps {
   username: string;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  imageClassName?: string;
 }
 
 const sizeClasses = {
@@ -42,6 +43,7 @@ export default function Avatar({
   username,
   size = "md",
   className = "",
+  imageClassName = "",
 }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -63,7 +65,7 @@ export default function Avatar({
           alt={username}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover"
+          className={`object-cover ${imageClassName}`}
           onError={() => setImageError(true)}
         />
       )}

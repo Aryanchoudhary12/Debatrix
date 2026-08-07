@@ -12,6 +12,7 @@ export interface RoastFeedback {
 export async function generateRoastFeedback(
   userMessage: string,
   priorMessages: { sender: string; content: string }[],
+  title: string,
 ): Promise<RoastFeedback> {
   const conversationContext = priorMessages
     .map((m) => `[${m.sender.toUpperCase()}]: ${m.content}`)
@@ -38,8 +39,8 @@ Respond with ONLY valid JSON, no markdown, no code fences. Exact shape:
 }`;
 
   const userPrompt = conversationContext
-    ? `Prior conversation:\n${conversationContext}\n\nLatest argument to roast:\n${userMessage}`
-    : `Argument to roast:\n${userMessage}`;
+    ? `Prior conversation:\n${conversationContext}\n\nLatest argument to roast:\n${userMessage}.title of discussion: ${title}`
+    : `Argument to roast:\n${userMessage}.title of discussion: ${title}`;
 
   const completion = await getGroq().chat.completions.create({
     model: "llama-3.3-70b-versatile",
