@@ -68,6 +68,7 @@ export const debateTypeDefs = `#graphql
         getDebateById(id: ID!): Debate
         getDebatesByUserId(userId: ID!): [Debate!]!
         getOpenDebates: [Debate!]!
+        getDebatesByStatus(status: DebateStatus!): [Debate!]!
     }
     type Mutation {
         createDebate(title: String!): Debate!

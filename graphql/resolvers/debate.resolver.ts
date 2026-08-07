@@ -66,6 +66,27 @@ export const debateResolvers = {
         }),
       );
     },
+    getDebatesByStatus:async(
+      _parents:unknown,
+      args:{status:"Waiting"|"Live"|"Completed"|"Cancelled"},
+      ctx:GraphQLContext
+    )=>{
+      const cacheKey = `debates:status:${args.status}`;
+      return getOrSetCache(cacheKey, 60, () =>
+        ctx.prisma.debate.findMany({
+          where: { status: args.status },
+          include: {
+            participants: {
+              include: {
+                user: true,
+                votesReceived: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        }),
+      );
+    }
   },
   Mutation: {
     createDebate: async (
