@@ -404,7 +404,7 @@ export default function DebateArena() {
             <CgSpinner className="w-20 h-20 animate-spin text-primary" />
           </div>
         )
-      ) : (
+      ) : debate?.status === "Cancelled" ? (
         <DebateResult
           totalVotes={Object.values(votes).reduce((a, b) => a + b, 0)}
           participants={[
@@ -420,7 +420,7 @@ export default function DebateArena() {
             },
           ]}
         />
-      )}
+      ) : null}
 
       {opponentJoined && debate?.status === "Live" && (
         <VotingSection
